@@ -1,0 +1,10 @@
+micronaut:
+  application:
+    name: 'Salesforce Bulk API Micronaut Example'
+
+input:
+  account-file-name: 'accounts.csv'
+
+salesforce:
+  auth-base-url: 'https://login.salesforce.com'
+  api-version: '46.0'

@@ -1,0 +1,80 @@
+= Salesforce Bulk API Micronaut Example
+
+This example project demonstrates how to transfer records to Salesforce using the https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/asynch_api_intro.htm[Bulk API] from a Java application created with the https://micronaut.io/[Micronaut] framework.
+The basic concept was inspired by the https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/asynch_api_code.htm[Java code example] in the Salesforce documentation.
+This is a pure CLI application which performs one import operation and then terminates.
+
+== Getting Started
+
+In order to run the example application there are some preparations to do in advance:
+
+. Get a Salesforce org (e.g. Developer Edition) to transfer the example data to.
+. Create a user in the Salesforce org who is allowed to access the API. For testing, you can use your _System Administrator_ user of a Developer Edition org.
+. Add the custom field `AccountId__c` to the `Account` standard object.
+* Open the _Object Manager_ in the Salesforce setup.
+* Go to the `Account` object and create a new custom field.
+* Use the type _Text_ with a length of at least 40 characters and enter the API name `AccountId`.
+* Activate the checkbox _External Id_.
+. Open a terminal in the project directory and install the partner SOAP binding dependency in your local Maven repository:
++
+----
+mvnw install:install-file -Dfile=src/main/lib/sfpartner.jar -DgroupId=io.github.georgwittberger.salesforce.bulkapi -DartifactId=salesforce-partner-soap-binding -Dversion=46.0 -Dpackaging=jar -DgeneratePom=true
+----
+
+. Build the executable JAR file for the application:
++
+----
+mvnw package
+----
+
+In order to prepare the runtime environment you need to set some configuration parameters:
+
+. Open a terminal in the project directory.
+. Set the following environment variables to allow the application to connect to your Salesforce org:
++
+----
+SALESFORCE_USERNAME=your-salesforce-username
+SALESFORCE_PASSWORD=your-salesforce-password
+SALESFORCE_SECURITY_TOKEN=your-salesforce-security-token
+----
++
+TIP: You can reset the security token in you personal user settings.
+Enter "token" in the _Quick Find_ field and select _Reset My Security Token_.
+
+Now you can run the application from the terminal:
+
+----
+java -jar target/salesforce-bulk-api-micronaut-example-0.0.1-SNAPSHOT.jar
+----
+
+It will load the account data from the local CSV file `accounts.csv`, transform it to Salesforce account records and transmit the data using an _Upsert_ job of the Bulk API. So, if you run the application multiple times it will update the previously imported accounts by matching them via the `AccountId__c` field.
+
+== Noteworthy Features
+
+Even though the application is based on the Java example code given in the Salesforce documentation there are some noteworthy enhancements which are useful for real-world scenarios:
+
+* The _Upsert_ operation sending the data to Salesforce can be given a maximum wait time.
+It will terminate the polling of batch states after the given time is over.
+* Polling batch states is performed in a background thread instead of synchronously in the main thread.
+This allows the cancellation of polling after any given duration.
+* Both the input data and Salesforce records are internally handled as plain Java objects with properties.
+The conversion from/to CSV format is performed by the http://opencsv.sourceforge.net/[OpenCSV] library.
+* Configuration of Salesforce authentication (and even other parameters) can be passed to the application using environment variables or an external configuration file `application.yml`.
+* Log messages are not only printed to the console but also written to the external log files for better monitoring.
+The log directory can even be set by specifying the Java system property `log.dir`.
+
+== Project Structure
+
+* Directory `src/main/java/io/github/georgwittberger/salesforce/bulkapi` contains the Java source code.
+** `BulkApiCommand` is the main class with the CLI command implementation.
+** `input/InputDataService` is just a simple bean reading the account data from the local CSV file.
+** `convert/AccountConverter` is a bean used to transform the data from the CSV file to Salesforce records format.
+** `salesforce/BulkApiService` is the most important part of the application.
+It transfers the records to Salesforce using the Bulk API and collects the result of this operation.
+* File `src/main/resources/application.yml` contains pre-defined application settings.
+* File `src/main/resources/logback.xml` contains the logging configuration.
+* File `src/main/lib/sfpartner.jar` is the result of the SOAP binding compilation based on the partner WSDL as described in the Salesforce documentation.
+
+== License
+
+https://opensource.org/licenses/MIT[MIT]

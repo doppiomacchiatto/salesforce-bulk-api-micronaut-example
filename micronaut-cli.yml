@@ -1,0 +1,5 @@
+profile: cli
+defaultPackage: io.github.georgwittberger.salesforce.bulkapi
+---
+testFramework: junit
+sourceLanguage: java
